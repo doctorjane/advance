@@ -1,11 +1,7 @@
 require "test_helper"
 
-class AdvanceTest < Minitest::Test
-  def test_that_it_has_a_version_number
+describe "Advance" do
+  it "has a version number" do
     refute_nil ::Advance::VERSION
-  end
-
-  def test_it_does_something_useful
-    assert false
   end
 end
