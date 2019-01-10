@@ -16,11 +16,19 @@ are preserved in directories prefixed with "tmp_". This isolates incomplete
 step data and ensures that the step is re-processed when the problem is 
 resolved.
 
-Advance scripts are easy to understand. They are ruby scripts, 
-composed of a series of function calls that invoke your scripts
-or commands to transform your data. Each step is composed of a
-step processing type function, followed by a 
-slug for the step, followed by the command or script. For example:
+Your project utilizing Advance contains a primary ruby script
+that imports Advance and includes your data transformation steps,
+which we will call "your Advance script."
+Each step describes a command to be run on your data. These commands can be
+one of the prepackaged Advance scripts, unix commands (like split, cut,
+etc), or scripts/commands that you create in whatever language is 
+convenient for you. Advance invokes these scripts one by one much like
+you would at the command line. Advance logs the exact command that is invoked
+so that you can run it yourself to check the output manually and to 
+debug failures.
+
+Advance steps are composed of a step processing type function, followed 
+by a slug for the step, followed by the command or script. For example:
 
 ```ruby
 single :unzip_7z_raw_data_file, "7z x {previous_file}"
@@ -31,7 +39,7 @@ multi :add_local_time, "cat {file_path} | add_local_time.rb timestamp local_time
 
 The step processing functions are `single` and `multi`. `Single` applies the command
 to the last output, which should be a single file. `Multi` speeds processing of multiple
-files by doing working in parallel (via the [TeamEffort gem][1]).
+files by doing work in parallel (via the [TeamEffort gem][1]).
 
 [1]: https://rubygems.org/gems/team_effort
 
@@ -49,18 +57,15 @@ to your script:
 
     $ gem install advance
     
- * install [bundler][3], and add this ruby snippet to the beginning of your script:
+ * install [bundler][3], and add Advance to your `Gemfile`:
  
 [3]: https://rubygems.org/gems/bundler
  
 ```ruby
-    #!/usr/bin/env ruby
-    require "bundler/inline"
-    
-    gemfile do
-      source "https://rubygems.org"
-      gem "advance"
-    end
+source "https://rubygems.org"
+
+gem "advance"
+# other gems...
 ```
 
 ## Usage
@@ -86,10 +91,10 @@ Steps have 3 components:
 
 Advance adds the bin dir of the Advance gem to PATH, so that you can invoke the 
 supporting advance scripts in your pipeline without specifying the full path
-of the script. Advance also adds the path of your script to PATH so that you can 
-invoke scripts in the same directory as your main script without specifying 
-the full path of the script. Of course, you can invoke any script if the path
-to the script is fully specified or the path is already on PATH.
+of the script. Advance also adds the path of _your Advance script_ to PATH so 
+that you can invoke scripts in the same directory as your main script without 
+specifying the full path of the script. Of course, you can invoke any script 
+if the path to the script is fully specified or the path is already on PATH.
 
 **Specifying Script Input and Output**
 
@@ -97,29 +102,26 @@ Since your command is transforming data, you need a way to specify the input
 file or directory and the output file name. Advance provides a few tokens 
 that can be inserted in the command string for this purpose:
 
- * **{previous_file}** indicates the output file from the previous step when
+ * **`{previous_file}`** indicates the output file from the previous step when
    the output of the previous step was a single output file. It is also used
    to indicate the first file to be used and it finds that file in the current 
    working dir.
- * **{file_path}** indicates an output file from the previous step when the
+ * **`{file_path}`** indicates an output file from the previous step when the
    previous step generated multiple output files and the current step is a 
    `multi` step.
- * **{file}** indicates an output file name, which is the basename from 
-   {file_path}. Commands often process multiple files from previous steps, 
+ * **`{file}`** indicates an output file name, which is the basename from 
+   `{file_path}`. Commands often process multiple files from previous steps, 
    generating multiple output files. Those output files are placed in the
    step directory.
- * **{previous_dir}** indicates the directory a previous step.
+ * **`{previous_dir}`** indicates the directory of the previous step.
  
 **Example Script**
 
 ```ruby
 #!/usr/bin/env ruby
-require "bundler/inline"
 
-gemfile do
-  source "https://rubygems.org"
-  gem "advance"
-end
+require "advance"
+include Advance
 
 ensure_bin_on_path # ensures the directory for this script is on
                    # the path so that related scripts can be referenced
@@ -137,13 +139,18 @@ When running your pipeline, it is helpful to have a directory with the single, i
 1. Move to your data directory with your single initial file.
 2. invoke your script from there.
 
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
 ## Contributing
+
+We ♥️ contributions!
+
+Found a bug? Ideally submit a pull request. And if that's not possible, make a bug report.
+
+Did you create a data transformation script? Please consider adding it to the 
+script collection in Advance by submitting a pull request.
+
+Do you find the Advance documentation lacking? Please help us improve it. 
+
+Can you translate the Advance documentation to your language? 
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/doctorjane/advance.
 
