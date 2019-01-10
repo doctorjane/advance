@@ -88,7 +88,7 @@ module Advance
             do_command command, no_feedback
           end
         rescue
-          puts "%%%% error while processing #{file}"
+          puts "%%%% error while processing >>#{file}<<"
           raise
         end
       end

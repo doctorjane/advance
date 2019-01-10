@@ -11,7 +11,7 @@ end
 
 files_dir_path = ARGV[0]
 output_file = ARGV[1]
-files = Find.find(files_dir_path).reject { |p| FileTest.directory?(p) || p =~ %r(\b(stdout|stderr)$) }
+files = Find.find(files_dir_path).reject { |p| FileTest.directory?(p) || File.basename(p) == "log" }
 
 # 1. capture the header from the first file
 do_cmd "ghead -n 1 #{files.first} > header"

@@ -11,7 +11,7 @@ lines = ARGV[1]
 csv_file_name = File.basename(csv_file)
 system "ghead -n 1 #{csv_file} > #{csv_file_name}_header"
 system "gtail -n +2 #{csv_file} | gsplit -l #{lines} -a 3 - #{csv_file_name}_"
-files = Dir.entries(".").reject { |f| f =~ %r{^(\.\.?|stdout|stderr)$} }
+files = Dir.entries(".").reject { |f| f =~ %r{^(\.\.?|log)$} }
 TeamEffort.work(files, 1) do |file|
   tmp_file = "tmp_#{file}"
   do_cmd "gcat #{csv_file_name}_header #{file} >> #{tmp_file}"
