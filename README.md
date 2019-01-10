@@ -29,13 +29,13 @@ multi :add_local_time, "cat {file_path} | add_local_time.rb timestamp local_time
 # ...
 ```
 
-The step processing functions are `single` and `multi`. Single applies the command
-to the last output, which should be a single file. Multi speeds processing of multiple
-files by doing working in parallel (via the [TeamEffort gem](1)).
+The step processing functions are `single` and `multi`. `Single` applies the command
+to the last output, which should be a single file. `Multi` speeds processing of multiple
+files by doing working in parallel (via the [TeamEffort gem][1]).
 
 [1]: https://rubygems.org/gems/team_effort
 
-> _[Advance](2): To help the progress of (something); to further._
+> _[Advance][2]: To help the progress of (something); to further._
 
 [2]: https://en.wiktionary.org/wiki/advance
 
@@ -49,7 +49,7 @@ to your script:
 
     $ gem install advance
     
- * install [bundler](3), and add this ruby snippet to the beginning of your script:
+ * install [bundler][3], and add this ruby snippet to the beginning of your script:
  
 [3]: https://rubygems.org/gems/bundler
  
@@ -83,6 +83,13 @@ Steps have 3 components:
  * a step processing type (single or multi)
  * a descriptive slug describing the step (as a ruby symbol)
  * the command that transforms the data
+
+Advance adds the bin dir of the Advance gem to PATH, so that you can invoke the 
+supporting advance scripts in your pipeline without specifying the full path
+of the script. Advance also adds the path of your script to PATH so that you can 
+invoke scripts in the same directory as your main script without specifying 
+the full path of the script. Of course, you can invoke any script if the path
+to the script is fully specified or the path is already on PATH.
 
 **Specifying Script Input and Output**
 

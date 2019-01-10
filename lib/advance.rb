@@ -1,11 +1,7 @@
 require "advance/version"
+require 'open3'
 
-# require "rubygems"
-# require "bundler/setup"
-#
-# require "awesome_print"
-# require "benchmark"
-# require "team_effort"
+require "team_effort"
 
 module Advance
   RESET="\e[0m"
@@ -23,17 +19,22 @@ module Advance
   YELLOW="\e[33m"
 
   def do_command(command, feedback = true)
-    puts if feedback
-    print "#{YELLOW}#{command}#{RESET}  " if feedback
-    puts "doing command >>#{command}<<"
+    puts "#{YELLOW}#{command}#{RESET}  " if feedback
     start_time = Time.now
     stdout, stderr, status = Open3.capture3(command)
-    File.write("stderr", "w")
-
-    puts "returned status: #{status}"
     elapsed_time = Time.now - start_time
-    puts "#{elapsed_time} seconds"
-    status
+    File.open("log", "w") do |f|
+      f.puts "%%% command: >#{command}<"
+      f.puts "%%% returned status: >#{status}<"
+      f.puts "%%% elapsed time: #{elapsed_time} seconds"
+      f.puts "%%% stdout:"
+      f.puts stdout
+      f.puts "%%% stderr:"
+      f.puts stderr
+    end
+    if !status.success?
+      raise "step #{$step} #{label} failed with #{status}"
+    end
   end
 
   def previous_dir_path
@@ -48,7 +49,7 @@ module Advance
 
   def previous_file_path
     dir_entries = Dir.glob(File.join(previous_dir_path, "*"))
-    dir_entries_clean = dir_entries.reject { |f| File.directory?(f) || f =~ %r{^\.\.?|stdout|stderr} }
+    dir_entries_clean = dir_entries.reject { |f| File.directory?(f) || f =~ %r{^\.\.?|log} }
     dir_entries_clean.first
   end
 
@@ -60,19 +61,15 @@ module Advance
       if command =~ /\{previous_dir\}/
         command.gsub!("{previous_dir}", previous_dir_path)
       end
-      status = do_command command
-      if !status.success?
-        raise "step #{$step} #{label} failed with #{status}"
-      end
+      do_command command
     end
   end
 
   def multi(label, command)
     no_feedback = false
     step(label) do
-      puts ""
       # previous_dir_path = File.expand_path(previous_dir_path)
-      files = Dir.entries(previous_dir_path).reject { |f| f =~ %r{^(\.\.?|stdout|stderr)$} }
+      files = Dir.entries(previous_dir_path).reject { |f| f =~ %r{^(\.\.?|log)$} }
       file_path_template = file_path_template(previous_dir_path, files)
       last_progress = ""
       progress_proc = ->(index, max_index) do
@@ -85,13 +82,10 @@ module Advance
           previous_file_path = file_path_template.gsub("{file}", file)
           command.gsub!("{file_path}", previous_file_path) unless $step == 1
           command.gsub!("{file}", file) unless $step == 1
-          puts "#{YELLOW}#{command}#{RESET}  "
+          puts "#{YELLOW}#{command}#{RESET}"
           dir_name = file
           work_in_sub_dir(dir_name) do
-            status = do_command command, no_feedback
-            if !status.success?
-              raise "step #{$step} #{label} failed with #{status}"
-            end
+            do_command command, no_feedback
           end
         rescue
           puts "%%%% error while processing #{file}"
@@ -112,11 +106,7 @@ module Advance
   end
 
   def work_in_sub_dir(dir_name, existing_message = nil)
-    `ls -1 #{dir_name} 2>&1`
-    if $?.success?
-      puts existing_message if existing_message
-      return
-    end
+    return if Dir.exist? dir_name
 
     tmp_dir_name = "tmp_#{dir_name}"
     FileUtils.rm_rf tmp_dir_name
@@ -127,7 +117,6 @@ module Advance
 
     FileUtils.cd ".."
     FileUtils.mv tmp_dir_name, dir_name
-    puts ""
   end
 
   def step_dir_prefix(step_no)
@@ -139,7 +128,7 @@ module Advance
     $step += 1
     dir_name = "#{step_dir_prefix($step)}_#{label}"
     $previous_dir = File.join(FileUtils.pwd, dir_name)
-    print "#{CYAN}step #{$step} #{label}#{WHITE}... #{RESET}"
+    puts "#{CYAN}step #{$step} #{label}#{WHITE}... #{RESET}"
 
     work_in_sub_dir(dir_name, "#{GREEN}OK#{RESET}") do
       yield
@@ -147,8 +136,15 @@ module Advance
   end
 
   def ensure_bin_on_path
-    my_path = File.dirname(__FILE__)
-    bin_dir = File.expand_path(File.join(my_path, ".."))
+    advance_path = File.dirname(__FILE__)
+    add_dir_to_path(advance_path)
+
+    caller_path = File.dirname(caller[0].split(/:/).first)
+    add_dir_to_path(caller_path)
+  end
+
+  def add_dir_to_path(dir)
+    bin_dir = File.expand_path(dir)
     path = ENV["PATH"]
 
     return if path.include?(bin_dir)
