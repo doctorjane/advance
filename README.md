@@ -139,6 +139,15 @@ When running your pipeline, it is helpful to have a directory with the single, i
 1. Move to your data directory with your single initial file.
 2. invoke your script from there.
 
+## Questions / Answers
+
+ * Q: **My script fails with `undefined local variable or method 'label' for main:Object`**  
+
+   A: This indicates a ruby script is running that does not have access to a ruby gem.
+      First, make sure your script is using the expected ruby by adding to the beginning of your
+      script `puts RUBY_VERSION`. Make sure the gem is installed by listing installed gems with 
+      `$ gem list`. Finally, check that the script requires the library with `require 'my-library'` 
+   
 ## Contributing
 
 We ♥️ contributions!
