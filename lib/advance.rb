@@ -33,7 +33,7 @@ module Advance
       f.puts stderr
     end
     if !status.success?
-      raise "step #{$step} #{label} failed with #{status}"
+      raise "step #{$step} failed with #{status}"
     end
   end
 
