@@ -1,6 +1,6 @@
 require "advance/version"
-require 'open3'
-
+require "find"
+require "open3"
 require "team_effort"
 
 module Advance
@@ -48,9 +48,7 @@ module Advance
   end
 
   def previous_file_path
-    dir_entries = Dir.glob(File.join(previous_dir_path, "*"))
-    dir_entries_clean = dir_entries.reject { |f| File.directory?(f) || f =~ %r{^\.\.?|log} }
-    dir_entries_clean.first
+    Find.find(previous_dir_path).reject { |p| FileTest.directory?(p) || File.basename(p) == "log" }.first
   end
 
   def single(label, command)
@@ -60,6 +58,9 @@ module Advance
       end
       if command =~ /\{previous_dir\}/
         command.gsub!("{previous_dir}", previous_dir_path)
+      end
+      if command =~ /\{file\}/
+        command.gsub!("{file}", File.basename(previous_file_path))
       end
       do_command command
     end
