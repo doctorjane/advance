@@ -107,7 +107,14 @@ module Advance
   end
 
   def work_in_sub_dir(dir_name, existing_message = nil)
-    return if Dir.exist? dir_name
+    if $redo_mode == :checking && Dir.exist?(dir_name)
+      return :checking
+    end
+
+    if Dir.exist? dir_name
+      puts "reprocessing #{dir_name}"
+      FileUtils.rm_rf dir_name
+    end
 
     tmp_dir_name = "tmp_#{dir_name}"
     FileUtils.rm_rf tmp_dir_name
@@ -118,6 +125,7 @@ module Advance
 
     FileUtils.cd ".."
     FileUtils.mv tmp_dir_name, dir_name
+    :replacing
   end
 
   def step_dir_prefix(step_no)
@@ -125,13 +133,14 @@ module Advance
   end
 
   def step(label)
+    $redo_mode ||= :checking
     $step ||= 0
     $step += 1
     dir_name = "#{step_dir_prefix($step)}_#{label}"
     $previous_dir = File.join(FileUtils.pwd, dir_name)
     puts "#{CYAN}step #{$step} #{label}#{WHITE}... #{RESET}"
 
-    work_in_sub_dir(dir_name, "#{GREEN}OK#{RESET}") do
+    $redo_mode = work_in_sub_dir(dir_name, "#{GREEN}OK#{RESET}") do
       yield
     end
   end
