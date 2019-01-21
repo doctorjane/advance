@@ -106,15 +106,24 @@ module Advance
     end
   end
 
+  def find_step_dir
+    dirs = Dir.entries(".")
+    dirs.find { |d| d =~ /^#{step_dir_prefix($step)}/ }
+  end
+
+  def clean_previous_step_dirs
+    while (step_dir = find_step_dir)
+      puts "## removing #{step_dir}"
+      FileUtils.rm_rf step_dir
+    end
+  end
+
   def work_in_sub_dir(dir_name, existing_message = nil)
     if $redo_mode == :checking && Dir.exist?(dir_name)
       return :checking
     end
 
-    if Dir.exist? dir_name
-      puts "reprocessing #{dir_name}"
-      FileUtils.rm_rf dir_name
-    end
+    clean_previous_step_dirs
 
     tmp_dir_name = "tmp_#{dir_name}"
     FileUtils.rm_rf tmp_dir_name
