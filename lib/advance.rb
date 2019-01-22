@@ -18,6 +18,141 @@ module Advance
   WHITE="\e[1;37m"
   YELLOW="\e[33m"
 
+  def advance(processing_mode, label, command)
+    $redo_mode ||= :checking
+    $step ||= 0
+    previous_dir_path = get_previous_dir_path
+
+    $step += 1
+    dir_prefix = step_dir_prefix($step)
+    dir_name = "#{dir_prefix}_#{label}"
+
+    puts "#{CYAN}advance #{$step} #{label}#{WHITE}... #{RESET}"
+    return if $redo_mode == :checking && Dir.exist?(dir_name)
+
+    clean_previous_step_dirs(dir_prefix)
+
+    send(processing_mode, label, command, previous_dir_path, dir_prefix, dir_name)
+  end
+
+  def static(processing_mode, label, command)
+    $redo_mode ||= :checking
+    $step ||= 0
+    previous_dir_path = get_previous_dir_path
+    dir_prefix = static_dir_prefix($step)
+    dir_name = "#{dir_prefix}_#{label}"
+    puts "#{CYAN}static #{$step} #{label}#{WHITE}... #{RESET}"
+    return if $redo_mode == :checking && Dir.exist?(dir_name)
+
+    FileUtils.rm_rf dir_name
+
+    send(processing_mode, label, command, previous_dir_path, dir_prefix, dir_name)
+  end
+
+  def get_previous_dir_path
+    relative_path = case $step
+                    when 0
+                      "."
+                    else
+                      File.join(".", Dir.entries(".").find { |d| d =~ /^#{step_dir_prefix($step)}/ })
+                    end
+    File.expand_path(relative_path)
+  end
+
+  def step_dir_prefix(step_no)
+    "step_%03d" % [step_no]
+  end
+
+  def static_dir_prefix(step_no)
+    "static_%03d" % [step_no]
+  end
+
+  def clean_previous_step_dirs(dir_prefix)
+    while (step_dir = find_step_dir(dir_prefix))
+      puts "## removing #{step_dir}"
+      FileUtils.rm_rf step_dir
+    end
+  end
+
+  def find_step_dir(dir_prefix)
+    dirs = Dir.entries(".")
+    dirs.find { |d| d =~ /^#{dir_prefix}/ }
+  end
+
+  def single(label, command, previous_dir_path, dir_prefix, dir_name)
+    work_in_sub_dir(dir_name) do
+      if command =~ /\{previous_file\}/
+        command.gsub!("{previous_file}", previous_file_path(previous_dir_path))
+      end
+      if command =~ /\{previous_dir\}/
+        command.gsub!("{previous_dir}", previous_dir_path)
+      end
+      if command =~ /\{file\}/
+        command.gsub!("{file}", File.basename(previous_file_path(previous_dir_path)))
+      end
+      do_command command
+    end
+  end
+
+  def multi(label, command, previous_dir_path, dir_prefix, dir_name)
+    no_feedback = false
+    work_in_sub_dir(dir_name) do
+      files = Dir.entries(previous_dir_path).reject { |f| f =~ %r{^(\.\.?|log)$} }
+      file_path_template = file_path_template(previous_dir_path, files)
+      last_progress = ""
+      progress_proc = ->(index, max_index) do
+        latest_progress = sprintf("%3i%", index.to_f / max_index * 100)
+        puts latest_progress if last_progress != latest_progress
+        last_progress = latest_progress
+      end
+      TeamEffort.work(files, $cores, progress_proc: progress_proc) do |file|
+        begin
+          previous_file_path = file_path_template.gsub("{file}", file)
+          command.gsub!("{file_path}", previous_file_path) unless $step == 1
+          command.gsub!("{file}", file) unless $step == 1
+          puts "#{YELLOW}#{command}#{RESET}"
+          work_in_sub_dir(file) do
+            do_command command, no_feedback
+          end
+        rescue
+          puts "%%%% error while processing >>#{file}<<"
+          raise
+        end
+      end
+    end
+  end
+
+  def work_in_sub_dir(dir_name)
+    if $redo_mode == :checking && Dir.exist?(dir_name)
+      return :checking
+    end
+
+    tmp_dir_name = "tmp_#{dir_name}"
+    FileUtils.rm_rf tmp_dir_name
+    FileUtils.mkdir_p tmp_dir_name
+    FileUtils.cd tmp_dir_name
+
+    yield
+
+    FileUtils.cd ".."
+    FileUtils.mv tmp_dir_name, dir_name
+    :replacing
+  end
+
+  def previous_file_path(previous_dir_path)
+    Find.find(previous_dir_path).reject { |p| FileTest.directory?(p) || File.basename(p) == "log" }.first
+  end
+
+  def file_path_template(dir_path, files)
+    file = files.first
+    file_path = File.join(dir_path, file)
+    if File.directory?(file_path)
+      File.join(dir_path, "{file}", "{file}")
+    else
+      File.join(dir_path, "{file}")
+    end
+  end
+
   def do_command(command, feedback = true)
     puts "#{YELLOW}#{command}#{RESET}  " if feedback
     start_time = Time.now
@@ -37,123 +172,11 @@ module Advance
     end
   end
 
-  def previous_dir_path
-    relative_path = case $step
-                    when 1
-                      ".."
-                    else
-                      File.join("..", Dir.entries("..").find { |d| d =~ /^#{step_dir_prefix($step - 1)}/ })
-                    end
-    File.expand_path(relative_path)
-  end
-
-  def previous_file_path
-    Find.find(previous_dir_path).reject { |p| FileTest.directory?(p) || File.basename(p) == "log" }.first
-  end
-
-  def single(label, command)
-    step(label) do
-      if command =~ /\{previous_file\}/
-        command.gsub!("{previous_file}", previous_file_path)
-      end
-      if command =~ /\{previous_dir\}/
-        command.gsub!("{previous_dir}", previous_dir_path)
-      end
-      if command =~ /\{file\}/
-        command.gsub!("{file}", File.basename(previous_file_path))
-      end
-      do_command command
-    end
-  end
-
-  def multi(label, command)
-    no_feedback = false
-    step(label) do
-      # previous_dir_path = File.expand_path(previous_dir_path)
-      files = Dir.entries(previous_dir_path).reject { |f| f =~ %r{^(\.\.?|log)$} }
-      file_path_template = file_path_template(previous_dir_path, files)
-      last_progress = ""
-      progress_proc = ->(index, max_index) do
-        latest_progress = sprintf("%3i%", index.to_f / max_index * 100)
-        puts latest_progress if last_progress != latest_progress
-        last_progress = latest_progress
-      end
-      TeamEffort.work(files, $cores, progress_proc: progress_proc) do |file|
-        begin
-          previous_file_path = file_path_template.gsub("{file}", file)
-          command.gsub!("{file_path}", previous_file_path) unless $step == 1
-          command.gsub!("{file}", file) unless $step == 1
-          puts "#{YELLOW}#{command}#{RESET}"
-          dir_name = file
-          work_in_sub_dir(dir_name) do
-            do_command command, no_feedback
-          end
-        rescue
-          puts "%%%% error while processing >>#{file}<<"
-          raise
-        end
-      end
-    end
-  end
-
-  def file_path_template(dir_path, files)
-    file = files.first
-    file_path = File.join(dir_path, file)
-    if File.directory?(file_path)
-      File.join(dir_path, "{file}", "{file}")
-    else
-      File.join(dir_path, "{file}")
-    end
-  end
-
-  def find_step_dir
-    dirs = Dir.entries(".")
-    dirs.find { |d| d =~ /^#{step_dir_prefix($step)}/ }
-  end
-
-  def clean_previous_step_dirs
-    while (step_dir = find_step_dir)
-      puts "## removing #{step_dir}"
-      FileUtils.rm_rf step_dir
-    end
-  end
-
-  def work_in_sub_dir(dir_name, existing_message = nil)
-    if $redo_mode == :checking && Dir.exist?(dir_name)
-      return :checking
-    end
-
-    clean_previous_step_dirs
-
-    tmp_dir_name = "tmp_#{dir_name}"
-    FileUtils.rm_rf tmp_dir_name
-    FileUtils.mkdir_p tmp_dir_name
-    FileUtils.cd tmp_dir_name
-
-    yield
-
-    FileUtils.cd ".."
-    FileUtils.mv tmp_dir_name, dir_name
-    :replacing
-  end
-
-  def step_dir_prefix(step_no)
-    "step_%03d" % [step_no]
-  end
-
-  def step(label)
-    $redo_mode ||= :checking
-    $step ||= 0
-    $step += 1
-    dir_name = "#{step_dir_prefix($step)}_#{label}"
-    $previous_dir = File.join(FileUtils.pwd, dir_name)
-    puts "#{CYAN}step #{$step} #{label}#{WHITE}... #{RESET}"
-
-    $redo_mode = work_in_sub_dir(dir_name, "#{GREEN}OK#{RESET}") do
-      yield
-    end
-  end
-
+  # def find_step_dir
+  #   dirs = Dir.entries(".")
+  #   dirs.find { |d| d =~ /^#{step_dir_prefix($step)}/ }
+  # end
+  #
   def ensure_bin_on_path
     advance_path = File.dirname(__FILE__)
     add_dir_to_path(advance_path)
