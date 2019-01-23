@@ -97,25 +97,25 @@ module Advance
   def multi(label, command, previous_dir_path, dir_prefix, dir_name)
     no_feedback = false
     work_in_sub_dir(dir_name) do
-      files = Dir.entries(previous_dir_path).reject { |f| f =~ %r{^(\.\.?|log)$} }
-      file_path_template = file_path_template(previous_dir_path, files)
+      file_paths = Find.find(previous_dir_path).reject { |path| FileTest.directory?(path) || path =~ %r{^(log)$} }
+
       last_progress = ""
       progress_proc = ->(index, max_index) do
         latest_progress = sprintf("%3i%", index.to_f / max_index * 100)
         puts latest_progress if last_progress != latest_progress
         last_progress = latest_progress
       end
-      TeamEffort.work(files, $cores, progress_proc: progress_proc) do |file|
+      TeamEffort.work(file_paths, $cores, progress_proc: progress_proc) do |file_path|
         begin
-          previous_file_path = file_path_template.gsub("{file}", file)
-          command.gsub!("{file_path}", previous_file_path) unless $step == 1
+          file = File.basename(file_path)
+          command.gsub!("{file_path}", file_path) unless $step == 1
           command.gsub!("{file}", file) unless $step == 1
           puts "#{YELLOW}#{command}#{RESET}"
           work_in_sub_dir(file) do
             do_command command, no_feedback
           end
         rescue
-          puts "%%%% error while processing >>#{file}<<"
+          puts "%%%% error while processing >>#{file_path}<<"
           raise
         end
       end
@@ -124,8 +124,10 @@ module Advance
 
   def work_in_sub_dir(dir_name)
     if $redo_mode == :checking && Dir.exist?(dir_name)
-      return :checking
+      return
     end
+
+    $redo_mode = :replacing
 
     tmp_dir_name = "tmp_#{dir_name}"
     FileUtils.rm_rf tmp_dir_name
@@ -136,7 +138,6 @@ module Advance
 
     FileUtils.cd ".."
     FileUtils.mv tmp_dir_name, dir_name
-    :replacing
   end
 
   def previous_file_path(previous_dir_path)
