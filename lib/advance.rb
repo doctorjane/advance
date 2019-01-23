@@ -97,7 +97,7 @@ module Advance
   def multi(label, command, previous_dir_path, dir_prefix, dir_name)
     no_feedback = false
     work_in_sub_dir(dir_name) do
-      file_paths = Find.find(previous_dir_path).reject { |path| FileTest.directory?(path) || path =~ %r{^(log)$} }
+      file_paths = Find.find(previous_dir_path).reject { |path| FileTest.directory?(path) || File.basename(path) == "log" }
 
       last_progress = ""
       progress_proc = ->(index, max_index) do
