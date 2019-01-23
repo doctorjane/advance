@@ -1,5 +1,6 @@
 require "advance/version"
 require "find"
+require "fileutils"
 require "open3"
 require "team_effort"
 
@@ -108,8 +109,8 @@ module Advance
       TeamEffort.work(file_paths, $cores, progress_proc: progress_proc) do |file_path|
         begin
           file = File.basename(file_path)
-          command.gsub!("{file_path}", file_path) unless $step == 1
-          command.gsub!("{file}", file) unless $step == 1
+          command.gsub!("{file_path}", file_path)
+          command.gsub!("{file}", file)
           puts "#{YELLOW}#{command}#{RESET}"
           work_in_sub_dir(file) do
             do_command command, no_feedback
@@ -173,11 +174,6 @@ module Advance
     end
   end
 
-  # def find_step_dir
-  #   dirs = Dir.entries(".")
-  #   dirs.find { |d| d =~ /^#{step_dir_prefix($step)}/ }
-  # end
-  #
   def ensure_bin_on_path
     advance_path = File.dirname(__FILE__)
     add_dir_to_path(advance_path)
