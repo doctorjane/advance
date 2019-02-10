@@ -1,4 +1,4 @@
-require "advance/version"
+require_relative "./advance/version"
 require "find"
 require "fileutils"
 require "open3"
@@ -19,6 +19,8 @@ module Advance
   WHITE="\e[1;37m"
   YELLOW="\e[33m"
 
+  puts "loading module"
+
   def advance(processing_mode, label, command)
     $redo_mode ||= :checking
     $step ||= 0
@@ -33,7 +35,7 @@ module Advance
 
     clean_previous_step_dirs(dir_prefix)
 
-    send(processing_mode, label, command, previous_dir_path, dir_prefix, dir_name)
+    send(processing_mode, command, previous_dir_path, dir_name)
   end
 
   def static(processing_mode, label, command)
@@ -47,7 +49,7 @@ module Advance
 
     FileUtils.rm_rf dir_name
 
-    send(processing_mode, label, command, previous_dir_path, dir_prefix, dir_name)
+    send(processing_mode, command, previous_dir_path, dir_name)
   end
 
   def get_previous_dir_path
@@ -80,7 +82,7 @@ module Advance
     dirs.find { |d| d =~ /^#{dir_prefix}/ }
   end
 
-  def single(label, command, previous_dir_path, dir_prefix, dir_name)
+  def single(command, previous_dir_path, dir_name)
     work_in_sub_dir(dir_name) do
       if command =~ /\{previous_file\}/
         command.gsub!("{previous_file}", previous_file_path(previous_dir_path))
@@ -95,7 +97,7 @@ module Advance
     end
   end
 
-  def multi(label, command, previous_dir_path, dir_prefix, dir_name)
+  def multi(command, previous_dir_path, dir_name)
     no_feedback = false
     work_in_sub_dir(dir_name) do
       file_paths = Find.find(previous_dir_path).reject { |path| FileTest.directory?(path) || File.basename(path) == "log" }
@@ -124,13 +126,14 @@ module Advance
   end
 
   def work_in_sub_dir(dir_name)
-    if $redo_mode == :checking && Dir.exist?(dir_name)
+    stripped_dir_name = strip_extensions(dir_name)
+    if $redo_mode == :checking && Dir.exist?(stripped_dir_name)
       return
     end
 
     $redo_mode = :replacing
 
-    tmp_dir_name = "tmp_#{dir_name}"
+    tmp_dir_name = "tmp_#{stripped_dir_name}"
     FileUtils.rm_rf tmp_dir_name
     FileUtils.mkdir_p tmp_dir_name
     FileUtils.cd tmp_dir_name
@@ -138,7 +141,31 @@ module Advance
     yield
 
     FileUtils.cd ".."
-    FileUtils.mv tmp_dir_name, dir_name
+    FileUtils.mv tmp_dir_name, stripped_dir_name
+  end
+
+  def strip_extensions(dir_name)
+    extensions = %w(
+      csv
+      csv_nh
+      geo_json
+      geojson
+      gz
+      json
+      tar
+      tgz
+      zip
+    )
+
+    changed_dir_name = dir_name
+    last_dir_name = nil
+    until last_dir_name == changed_dir_name do
+      last_dir_name = changed_dir_name
+      extensions.each do |extension|
+        changed_dir_name = changed_dir_name.gsub(%r(\.#{extension}$), "")
+      end
+    end
+    changed_dir_name
   end
 
   def previous_file_path(previous_dir_path)
