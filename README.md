@@ -102,18 +102,17 @@ Since your command is transforming data, you need a way to specify the input
 file or directory and the output file name. Advance provides a few tokens 
 that can be inserted in the command string for this purpose:
 
- * **`{previous_file}`** indicates the output file from the previous step when
-   the output of the previous step was a single output file. It is also used
+ * **`{input_file}`** indicates the output file from the previous. It is also used
    to indicate the first file to be used and it finds that file in the current 
    working dir.
- * **`{file_path}`** indicates an output file from the previous step when the
-   previous step generated multiple output files and the current step is a 
-   `multi` step.
- * **`{file}`** indicates an output file name, which is the basename from 
-   `{file_path}`. Commands often process multiple files from previous steps, 
+ * **`{file_name}`** indicates an output file name, which is the basename from 
+   `{input_file}`. Commands often process multiple files from previous steps, 
    generating multiple output files. Those output files are placed in the
    step directory.
- * **`{previous_dir}`** indicates the directory of the previous step.
+ * **`{file_name_without_extension}`** is, well, {file_name} with the 
+   extension removed. This is useful when you are transforming a file from
+   one type (with an extension) to another type, with a new extension.
+ * **`{input_dir}`** indicates the directory of the previous step.
  
 **Example Script**
 

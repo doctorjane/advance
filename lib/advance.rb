@@ -84,15 +84,15 @@ module Advance
 
   def single(command, previous_dir_path, dir_name)
     work_in_sub_dir(dir_name) do
-      if command =~ /\{previous_file\}/
-        command.gsub!("{previous_file}", previous_file_path(previous_dir_path))
-      end
-      if command =~ /\{previous_dir\}/
-        command.gsub!("{previous_dir}", previous_dir_path)
-      end
-      if command =~ /\{file\}/
-        command.gsub!("{file}", File.basename(previous_file_path(previous_dir_path)))
-      end
+      input_file_path = previous_file_path(previous_dir_path)
+      basename = File.basename(input_file_path)
+      root_file_name = basename.gsub(%r(\.[^.]+$), '')
+
+      command.gsub!("{input_dir}", previous_dir_path)
+      command.gsub!("{input_file}", input_file_path)
+      command.gsub!("{file_name}", basename)
+      command.gsub!("{file_name_without_extension}", root_file_name)
+
       do_command command
     end
   end
@@ -110,11 +110,14 @@ module Advance
       end
       TeamEffort.work(file_paths, $cores, progress_proc: progress_proc) do |file_path|
         begin
-          file = File.basename(file_path)
-          command.gsub!("{file_path}", file_path)
-          command.gsub!("{file}", file)
+          basename = File.basename(file_path)
+          root_file_name = basename.gsub(%r(\.[^.]+$), '')
+
+          command.gsub!("{input_file}", file_path)
+          command.gsub!("{file_name}", basename)
+          command.gsub!("{file_name_without_extension}", root_file_name)
           puts "#{YELLOW}#{command}#{RESET}"
-          work_in_sub_dir(file) do
+          work_in_sub_dir(basename) do
             do_command command, no_feedback
           end
         rescue
