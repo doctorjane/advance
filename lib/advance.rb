@@ -1,8 +1,9 @@
-require_relative "./advance/version"
-require "find"
 require "fileutils"
+require "find"
+require "json"
 require "open3"
 require "team_effort"
+require_relative "./advance/version"
 
 module Advance
   RESET="\e[0m"
@@ -19,7 +20,44 @@ module Advance
   WHITE="\e[1;37m"
   YELLOW="\e[33m"
 
-  puts "loading module"
+  def self.included(pipeline_module)
+    $pipeline = caller_locations.first.path
+    meta =
+      if File.exist?(".meta")
+        JSON.parse(File.read(".meta"))
+      else
+        {}
+      end
+    last_run_number = meta["last_run_number"] ||= -1
+    $run_number = last_run_number + 1
+  end
+
+  def update_meta(step_number, processing_mode, label, command, start_time, duration, file_count)
+    meta =
+      if File.exist?(".meta")
+        JSON.parse(File.read(".meta"))
+      else
+        {}
+      end
+
+    meta["pipeline"] ||= $pipeline
+    meta["last_run_number"] = $run_number
+    meta["runs"] ||= []
+
+    step_data = {
+      "step_number" => step_number,
+      "start_time" => start_time,
+      "duration" => duration,
+      "file_count" => file_count,
+      "processing_mode" => processing_mode,
+      "label" => label,
+      "command" => command
+    }
+    meta["runs"][$run_number] ||= []
+    meta["runs"][$run_number] << step_data
+
+    File.write(".meta", JSON.pretty_generate(meta))
+  end
 
   def advance(processing_mode, label, command)
     $redo_mode ||= :checking
@@ -39,7 +77,11 @@ module Advance
         do_command_wo_log "tar xzf #{previous_dir_path}"
       end
       previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
+      start_time = Time.now
       send(processing_mode, command, previous_dir_path, dir_name)
+      file_count = count_files(dir_name)
+      duration = Time.now - start_time
+      update_meta($step, processing_mode, label, command, start_time, duration, file_count)
     end
     previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
     if File.basename(previous_dir_path) =~ /^step_/
@@ -48,6 +90,17 @@ module Advance
       end
       do_command_wo_log "rm -rf #{previous_dir_path}"
     end
+  end
+
+  def count_files(dir)
+    file_count = 0
+    Find.find(dir) do |path|
+      next if File.directory?(path)
+      next if File.basename(path) == "log"
+      next if File.basename(path) =~ /^\./
+      file_count += 1
+    end
+    file_count
   end
 
   def static(processing_mode, label, command)

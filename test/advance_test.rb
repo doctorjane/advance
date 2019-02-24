@@ -62,7 +62,7 @@ describe "multi" do
         advance :multi, :mumble, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
         created_files = Dir.entries(".")
-        created_files.must_equal(%w(. .. foo.csv bar.csv step_001_mumble))
+        created_files.must_equal(%w(. .. .meta foo.csv bar.csv step_001_mumble))
 
         created_files = Dir.entries("./step_001_mumble")
         created_files.must_equal(%w(. .. foo bar))
@@ -101,7 +101,7 @@ describe "single" do
       advance :single, :mumble, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       created_files = Dir.entries(".")
-      created_files.must_equal(%w(. .. foo.csv step_001_mumble))
+      created_files.must_equal(%w(. .. .meta foo.csv step_001_mumble))
 
       created_files = Dir.entries("./step_001_mumble")
       created_files.must_equal(%w(. .. foo.csv log))
@@ -130,7 +130,7 @@ describe "single" do
       advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       files = Dir.entries(".")
-      files.sort.must_equal(%w(. .. step_001_mumble.tgz step_002_flagerize).sort)
+      files.sort.must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
 
     ensure
       FileUtils.cd File.dirname(__FILE__)
@@ -154,7 +154,7 @@ describe "single" do
       advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       files = Dir.entries(".")
-      files.sort.must_equal(%w(. .. step_001_mumble.tgz step_002_flagerize).sort)
+      files.sort.must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
 
     ensure
       FileUtils.cd File.dirname(__FILE__)
@@ -180,7 +180,7 @@ describe "single" do
       advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       files = Dir.entries(".")
-      files.sort.must_equal(%w(. .. step_001_mumble.tgz step_002_flagerize).sort)
+      files.sort.must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
 
       contents = File.read("./step_002_flagerize/something_1.csv")
       contents.must_equal("#{test_dir}/step_001_mumble/something_1.csv and something_1\n")

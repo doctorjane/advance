@@ -14,7 +14,7 @@ CSV
       expected = <<CSV
 abc,222,666
 CSV
-      csv_select_bin = File.expand_path("./bin/csv_select_nh.rb")
+      csv_select_bin = File.expand_path("../../bin/csv_select_nh.rb", __FILE__)
       output = `#{csv_select_bin} "row[2]==666" < #{tmp_file.path}`
 
       output.must_equal(expected)
