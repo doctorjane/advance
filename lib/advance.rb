@@ -184,7 +184,7 @@ module Advance
   end
 
   def previous_file_path(previous_dir_path)
-    Find.find(previous_dir_path).reject { |p| FileTest.directory?(p) || File.basename(p) == "log" }.first
+    Find.find(previous_dir_path).reject {|p| File.basename(p) =~ %r(^\.) || FileTest.directory?(p) || File.basename(p) == "log"}.first
   end
 
   def file_path_template(dir_path, files)
