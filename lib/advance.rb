@@ -35,7 +35,18 @@ module Advance
 
     clean_previous_step_dirs(dir_prefix)
 
+    if previous_dir_path =~ /\.tgz$/
+      system "tar xzf #{previous_dir_path}"
+    end
+    previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
     send(processing_mode, command, previous_dir_path, dir_name)
+
+    if File.basename(previous_dir_path) =~ /^step_/
+      if !File.exist?("#{previous_dir_path}.tgz")
+        system "tar czf #{previous_dir_path}.tgz #{File.basename(previous_dir_path)}"
+      end
+      system "rm -rf #{previous_dir_path}"
+    end
   end
 
   def static(processing_mode, label, command)

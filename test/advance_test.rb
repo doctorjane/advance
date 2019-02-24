@@ -90,29 +90,104 @@ describe "single" do
     FileUtils.cd File.dirname(__FILE__)
     test_dir = File.join(File.dirname(__FILE__), "advance_work_in_sub_dir_dab3a3c")
 
-    %w(foo.csv foo.gz foo.geojson foo.json).each do |dir_name|
+    FileUtils.rm_rf test_dir
+    FileUtils.mkdir_p test_dir
+    begin
+      FileUtils.cd test_dir
+      FileUtils.touch "foo.csv"
+
+      $step = nil
+
+      advance :single, :mumble, "echo {input_file} and {file_name_without_extension} > {file_name}"
+
+      created_files = Dir.entries(".")
+      created_files.must_equal(%w(. .. foo.csv step_001_mumble))
+
+      created_files = Dir.entries("./step_001_mumble")
+      created_files.must_equal(%w(. .. foo.csv log))
+      contents = File.read("./step_001_mumble/foo.csv")
+      contents.must_equal("#{test_dir}/foo.csv and foo\n")
+
+    ensure
+      FileUtils.cd File.dirname(__FILE__)
       FileUtils.rm_rf test_dir
-      FileUtils.mkdir_p test_dir
-      begin
-        FileUtils.cd test_dir
-        FileUtils.touch "foo.csv"
+    end
+  end
 
-        $step = nil
+  it "when finished, zips the previous dir" do
+    FileUtils.cd File.dirname(__FILE__)
+    test_dir = File.join(File.dirname(__FILE__), "zips_previous_dir_fe959a0")
+    FileUtils.rm_rf test_dir
+    FileUtils.mkdir_p test_dir
+    begin
+      FileUtils.cd test_dir
+      FileUtils.mkdir "step_001_mumble"
+      FileUtils.touch "step_001_mumble/something_1.csv"
+      FileUtils.touch "step_001_mumble/something_2.csv"
 
-        advance :single, :mumble, "echo {input_file} and {file_name_without_extension} > {file_name}"
+      $step = 1
 
-        created_files = Dir.entries(".")
-        created_files.must_equal(%w(. .. foo.csv step_001_mumble))
+      advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
-        created_files = Dir.entries("./step_001_mumble")
-        created_files.must_equal(%w(. .. foo.csv log))
-        contents = File.read("./step_001_mumble/foo.csv")
-        contents.must_equal("#{test_dir}/foo.csv and foo\n")
+      files = Dir.entries(".")
+      files.sort.must_equal(%w(. .. step_001_mumble.tgz step_002_flagerize).sort)
 
-      ensure
-        FileUtils.cd File.dirname(__FILE__)
-        FileUtils.rm_rf test_dir
-      end
+    ensure
+      FileUtils.cd File.dirname(__FILE__)
+      FileUtils.rm_rf test_dir
+    end
+  end
+
+  it "does not zip the previous dir on step 1" do
+    FileUtils.cd File.dirname(__FILE__)
+    test_dir = File.join(File.dirname(__FILE__), "zips_previous_dir_fe959a0")
+    FileUtils.rm_rf test_dir
+    FileUtils.mkdir_p test_dir
+    begin
+      FileUtils.cd test_dir
+      FileUtils.mkdir "step_001_mumble"
+      FileUtils.touch "step_001_mumble/something_1.csv"
+      FileUtils.touch "step_001_mumble/something_2.csv"
+
+      $step = 1
+
+      advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
+
+      files = Dir.entries(".")
+      files.sort.must_equal(%w(. .. step_001_mumble.tgz step_002_flagerize).sort)
+
+    ensure
+      FileUtils.cd File.dirname(__FILE__)
+      FileUtils.rm_rf test_dir
+    end
+  end
+
+  it "when previous step was zipped, unzips to do work" do
+    FileUtils.cd File.dirname(__FILE__)
+    test_dir = File.join(File.dirname(__FILE__), "unzips_previous_dir_fe959a0")
+    FileUtils.rm_rf test_dir
+    FileUtils.mkdir_p test_dir
+    begin
+      FileUtils.cd test_dir
+      FileUtils.mkdir "step_001_mumble"
+      FileUtils.touch "step_001_mumble/something_1.csv"
+      FileUtils.touch "step_001_mumble/something_2.csv"
+      system("tar czf step_001_mumble.tgz step_001_mumble")
+      system("rm -rf step_001_mumble")
+
+      $step = 1
+
+      advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
+
+      files = Dir.entries(".")
+      files.sort.must_equal(%w(. .. step_001_mumble.tgz step_002_flagerize).sort)
+
+      contents = File.read("./step_002_flagerize/something_1.csv")
+      contents.must_equal("#{test_dir}/step_001_mumble/something_1.csv and something_1\n")
+
+    ensure
+      FileUtils.cd File.dirname(__FILE__)
+      FileUtils.rm_rf test_dir
     end
   end
 end
