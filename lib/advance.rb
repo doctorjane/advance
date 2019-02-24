@@ -31,21 +31,22 @@ module Advance
     dir_name = "#{dir_prefix}_#{label}"
 
     puts "#{CYAN}advance #{$step} #{label}#{WHITE}... #{RESET}"
-    return if $redo_mode == :checking && Dir.exist?(dir_name)
 
-    clean_previous_step_dirs(dir_prefix)
+    if $redo_mode != :checking || !(File.exist?(dir_name) || File.exist?(dir_name + '.tgz'))
+      clean_previous_step_dirs(dir_prefix)
 
-    if previous_dir_path =~ /\.tgz$/
-      system "tar xzf #{previous_dir_path}"
+      if previous_dir_path =~ /\.tgz$/
+        do_command_wo_log "tar xzf #{previous_dir_path}"
+      end
+      previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
+      send(processing_mode, command, previous_dir_path, dir_name)
     end
     previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
-    send(processing_mode, command, previous_dir_path, dir_name)
-
     if File.basename(previous_dir_path) =~ /^step_/
       if !File.exist?("#{previous_dir_path}.tgz")
-        system "tar czf #{previous_dir_path}.tgz #{File.basename(previous_dir_path)}"
+        do_command_wo_log "tar czf #{previous_dir_path}.tgz #{File.basename(previous_dir_path)}"
       end
-      system "rm -rf #{previous_dir_path}"
+      do_command_wo_log "rm -rf #{previous_dir_path}"
     end
   end
 
@@ -212,6 +213,24 @@ module Advance
     end
     if !status.success?
       raise "step #{$step} failed with #{status}\n#{stderr}"
+    end
+  end
+
+  def do_command_wo_log(command, feedback = true)
+    puts "#{YELLOW}#{command}#{RESET}  " if feedback
+    stdout, stderr, status = Open3.capture3(command)
+    if !status.success?
+      error_msg = [
+        "step #{$step} failed",
+        "%%% command: >#{command}<",
+        "%%% returned status: >#{status}<",
+        "%%% stdout:",
+        stdout,
+        "%%% stderr:",
+        stderr
+      ].join("\n")
+
+      raise error_msg
     end
   end
 
