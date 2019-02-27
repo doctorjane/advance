@@ -166,7 +166,7 @@ module Advance
   def multi(command, previous_dir_path, dir_name)
     no_feedback = false
     work_in_sub_dir(dir_name) do
-      file_paths = Find.find(previous_dir_path).reject { |path| FileTest.directory?(path) || File.basename(path) == "log" }
+      file_paths = Find.find(previous_dir_path).reject { |p| File.basename(p) =~ %r(^\.) || FileTest.directory?(p) || File.basename(p) == "log" }
 
       last_progress = ""
       progress_proc = ->(index, max_index) do
