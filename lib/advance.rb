@@ -176,14 +176,18 @@ module Advance
       end
       TeamEffort.work(file_paths, $cores, progress_proc: progress_proc) do |file_path|
         begin
+          path_relative_to_step_dir = File.dirname(file_path.gsub(%r(^#{previous_dir_path}/?), ""))
+          path_relative_to_step_dir = path_relative_to_step_dir == "." ? "" : path_relative_to_step_dir
           basename = File.basename(file_path)
+          new_dir_name = path_relative_to_step_dir == "" ? basename : File.join(path_relative_to_step_dir, basename)
           root_file_name = basename.gsub(%r(\.[^.]+$), '')
 
+          command.gsub!("{input_dir}", File.dirname(file_path))
           command.gsub!("{input_file}", file_path)
           command.gsub!("{file_name}", basename)
           command.gsub!("{file_name_without_extension}", root_file_name)
           puts "#{YELLOW}#{command}#{RESET}"
-          work_in_sub_dir(basename) do
+          work_in_sub_dir(new_dir_name) do
             do_command command, no_feedback
           end
         rescue
@@ -195,6 +199,7 @@ module Advance
   end
 
   def work_in_sub_dir(dir_name)
+    starting_dir = FileUtils.pwd
     stripped_dir_name = strip_extensions(dir_name)
     if $redo_mode == :checking && Dir.exist?(stripped_dir_name)
       return
@@ -202,15 +207,17 @@ module Advance
 
     $redo_mode = :replacing
 
-    tmp_dir_name = "tmp_#{stripped_dir_name}"
-    FileUtils.rm_rf tmp_dir_name
-    FileUtils.mkdir_p tmp_dir_name
-    FileUtils.cd tmp_dir_name
+    dirs = File.split(stripped_dir_name)
+    dirs[-1] = "tmp_#{dirs[-1]}"
+    tmp_dir = File.join(dirs)
+    FileUtils.rm_rf tmp_dir
+    FileUtils.mkdir_p tmp_dir
+    FileUtils.cd tmp_dir
 
     yield
 
-    FileUtils.cd ".."
-    FileUtils.mv tmp_dir_name, stripped_dir_name
+    FileUtils.cd starting_dir
+    FileUtils.mv tmp_dir, stripped_dir_name
   end
 
   def strip_extensions(dir_name)
