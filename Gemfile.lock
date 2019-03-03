@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    advance (0.3.5)
+    advance (0.3.6)
       team_effort
 
 GEM

@@ -119,6 +119,48 @@ describe "multi" do
       ).sort
     end
   end
+
+  it "maintains depth of tree on subsequent multi's" do
+    work_in_test_dir "maintains_depth" do
+      FileUtils.mkdir_p "step_002_mumble/abc/foo"
+      FileUtils.mkdir_p "step_002_mumble/abc/bar"
+      FileUtils.mkdir_p "step_002_mumble/def/baz"
+      FileUtils.touch "step_002_mumble/abc/foo/foo.csv"
+      FileUtils.touch "step_002_mumble/abc/bar/bar.csv"
+      FileUtils.touch "step_002_mumble/def/baz/baz.csv"
+
+      Dir.glob("step_002_mumble/**/*").sort.must_equal %w(
+        step_002_mumble/abc
+        step_002_mumble/abc/bar
+        step_002_mumble/abc/bar/bar.csv
+        step_002_mumble/abc/foo
+        step_002_mumble/abc/foo/foo.csv
+        step_002_mumble/def
+        step_002_mumble/def/baz
+        step_002_mumble/def/baz/baz.csv
+      ).sort
+
+      $step = 2
+      $cores = 1
+
+      advance :multi, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
+
+      Dir.glob("step_003_flagerize/**/*").sort.must_equal %w(
+        step_003_flagerize/abc
+        step_003_flagerize/abc/bar
+        step_003_flagerize/abc/bar/bar.csv
+        step_003_flagerize/abc/bar/log
+        step_003_flagerize/abc/foo
+        step_003_flagerize/abc/foo/foo.csv
+        step_003_flagerize/abc/foo/log
+        step_003_flagerize/def
+        step_003_flagerize/def/baz
+        step_003_flagerize/def/baz/baz.csv
+        step_003_flagerize/def/baz/log
+      ).sort
+    end
+  end
+
 end
 
 describe "single" do

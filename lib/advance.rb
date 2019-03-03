@@ -200,14 +200,14 @@ module Advance
 
   def work_in_sub_dir(dir_name)
     starting_dir = FileUtils.pwd
-    stripped_dir_name = strip_extensions(dir_name)
+    stripped_dir_name = File.join(*(strip_extensions(dir_name).split("/").uniq))
     if $redo_mode == :checking && Dir.exist?(stripped_dir_name)
       return
     end
 
     $redo_mode = :replacing
 
-    dirs = File.split(stripped_dir_name)
+    dirs = stripped_dir_name.split("/")
     dirs[-1] = "tmp_#{dirs[-1]}"
     tmp_dir = File.join(dirs)
     FileUtils.rm_rf tmp_dir
