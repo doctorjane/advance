@@ -1,6 +1,6 @@
 require "find"
 require "minitest/autorun"
-require_relative "../lib/path_for_new_file"
+require_relative "../lib/file_path_generator"
 
 describe "path_for_new_file" do
   it "moves files to a sub dir and adds a subdir to the new file path when the count exceeds the max" do

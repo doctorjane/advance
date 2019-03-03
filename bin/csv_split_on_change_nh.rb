@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require "csv"
-require_relative "../lib/path_for_new_file"
+require_relative "../lib/file_path_generator"
 
 def columns_changed?(previous_row, row, change_columns)
   changed = false
