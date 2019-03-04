@@ -30,6 +30,8 @@ module Advance
       end
     last_run_number = meta["last_run_number"] ||= -1
     $run_number = last_run_number + 1
+    $cores=`sysctl -n hw.ncpu`.to_i
+    puts "Multi steps will use #{$cores} cores"
   end
 
   def update_meta(step_number, processing_mode, label, command, start_time, duration, file_count)
@@ -153,7 +155,7 @@ module Advance
       input_file_path = previous_file_path(previous_dir_path)
       basename = File.basename(input_file_path)
       root_file_name = basename.gsub(%r(\.[^.]+$), '')
-
+puts "================ #{previous_dir_path}"
       command.gsub!("{input_dir}", previous_dir_path)
       command.gsub!("{input_file}", input_file_path)
       command.gsub!("{file_name}", basename)
