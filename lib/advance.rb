@@ -155,7 +155,6 @@ module Advance
       input_file_path = previous_file_path(previous_dir_path)
       basename = File.basename(input_file_path)
       root_file_name = basename.gsub(%r(\.[^.]+$), '')
-puts "================ #{previous_dir_path}"
       command.gsub!("{input_dir}", previous_dir_path)
       command.gsub!("{input_file}", input_file_path)
       command.gsub!("{file_name}", basename)
