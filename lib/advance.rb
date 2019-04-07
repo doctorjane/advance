@@ -297,8 +297,8 @@ module Advance
   end
 
   def ensure_bin_on_path
-    advance_path = File.dirname(__FILE__)
-    add_dir_to_path(advance_path)
+    advance_bin_path = File.expand_path(File.join(File.dirname(__FILE__), "../bin"))
+    add_dir_to_path(advance_bin_path)
 
     caller_path = File.dirname(caller[0].split(/:/).first)
     add_dir_to_path(caller_path)
