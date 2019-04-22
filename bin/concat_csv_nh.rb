@@ -14,5 +14,5 @@ files = Find.find(files_dir_path).reject { |p| FileTest.directory?(p) || File.ba
 
 files.each_slice(20) do |files_to_concat|
   file_list = files_to_concat.join(' ')
-  do_cmd "gcat #{file_list} >> #{output_file}"
+  do_cmd "cat #{file_list} >> #{output_file}"
 end
