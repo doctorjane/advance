@@ -1,3 +1,5 @@
+require "fileutils"
+
 class FilePathGenerator
   def initialize(max_entries_per_dir = 10_000)
     @max_entries_per_dir = max_entries_per_dir
