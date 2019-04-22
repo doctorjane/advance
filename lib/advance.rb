@@ -30,7 +30,7 @@ module Advance
       end
     last_run_number = meta["last_run_number"] ||= -1
     $run_number = last_run_number + 1
-    $cores=`sysctl -n hw.ncpu`.to_i
+    $cores=`nproc`.to_i
     puts "Multi steps will use #{$cores} cores"
   end
 
