@@ -32,6 +32,17 @@ module Advance
     $run_number = last_run_number + 1
     $cores=`nproc`.to_i
     puts "Multi steps will use #{$cores} cores"
+
+    $verbose_logging = case ENV["ADVANCE_VERBOSE_LOGGING"]
+                       when "true"; true
+                       when "false"; false
+                       when nil
+                         puts "For detailed logging of multi steps, rerun after 'export ADVANCE_VERBOSE_LOGGING=true'"
+                         false
+                       else
+                         puts "env variable ADVANCE_VERBOSE_LOGGING should be 'true', 'false', or not present (defaults to 'false')"
+                         puts "currently set to >#{ENV["ADVANCE_VERBOSE_LOGGING"]}<"
+                       end
   end
 
   def update_meta(step_number, processing_mode, label, command, start_time, duration, file_count)
@@ -165,7 +176,6 @@ module Advance
   end
 
   def multi(command, previous_dir_path, dir_name)
-    no_feedback = false
     work_in_sub_dir(dir_name) do
       file_paths = Find.find(previous_dir_path).reject { |p| File.basename(p) =~ %r(^\.) || FileTest.directory?(p) || File.basename(p) == "log" }
 
@@ -187,9 +197,9 @@ module Advance
           command.gsub!("{input_file}", file_path)
           command.gsub!("{file_name}", basename)
           command.gsub!("{file_name_without_extension}", root_file_name)
-          puts "#{YELLOW}#{command}#{RESET}"
+          puts "#{YELLOW}#{command}#{RESET}  " if $verbose_logging
           work_in_sub_dir(new_dir_name) do
-            do_command command, no_feedback
+            do_command command, $verbose_logging
           end
         rescue
           puts "%%%% error while processing >>#{file_path}<<"
