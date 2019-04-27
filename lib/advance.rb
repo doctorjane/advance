@@ -66,7 +66,7 @@ module Advance
       "processing_mode" => processing_mode,
       "label" => label,
       "command" => command,
-      "columns" => $cols
+      "columns" => $column_names
     }
     meta["runs"][$run_number] ||= []
     meta["runs"][$run_number] << step_data
