@@ -244,7 +244,7 @@ CSV
 
         $column_names.must_be_nil
         capture_column_names_from_csv
-        $column_names.must_equal %w{id name location start_time}
+        $column_names.must_equal %i{id name location start_time}
       end
     end
   end

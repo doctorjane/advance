@@ -82,7 +82,7 @@ module Advance
     previous_dir_path = get_previous_dir_path
     input_file_path = previous_file_path(previous_dir_path)
     CSV.foreach(input_file_path, :headers => true) do |row|
-      $column_names = row.headers
+      $column_names = row.headers.map(&:to_sym)
       break
     end
   end
