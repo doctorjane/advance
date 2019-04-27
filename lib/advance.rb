@@ -1,3 +1,4 @@
+require "csv"
 require "fileutils"
 require "find"
 require "json"
@@ -71,6 +72,19 @@ module Advance
     meta["runs"][$run_number] << step_data
 
     File.write(".meta", JSON.pretty_generate(meta))
+  end
+
+  def capture_column_names_from_csv
+    if $step.nil?
+      raise "capture_column_names_from_csv cannot be the first step"
+    end
+
+    previous_dir_path = get_previous_dir_path
+    input_file_path = previous_file_path(previous_dir_path)
+    CSV.foreach(input_file_path, :headers => true) do |row|
+      $column_names = row.headers
+      break
+    end
   end
 
   def advance(processing_mode, label, command)

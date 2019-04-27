@@ -231,4 +231,21 @@ describe "single" do
       contents.must_equal("#{test_dir}/step_001_mumble/something_1.csv and something_1\n")
     end
   end
+
+  describe "capture_column_names_from_csv" do
+    it "set dollar column_names with the names from the csv file" do
+      work_in_test_dir "capture_column_names_from_csv_197c6ba0" do |test_dir|
+        FileUtils.mkdir "step_001_mumble"
+        File.write("step_001_mumble/something_1.csv", <<CSV)
+id,name,location,start_time
+6134,Otter,"123 Park Ave, Oakland CA",2019-04-21 11:06:12
+CSV
+        $step = 1
+
+        $column_names.must_be_nil
+        capture_column_names_from_csv
+        $column_names.must_equal %w{id name location start_time}
+      end
+    end
+  end
 end
