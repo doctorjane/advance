@@ -11,11 +11,13 @@ describe "path_for_new_file" do
     FileUtils.mkdir(test_dir)
     begin
       FileUtils.chdir(test_dir)
+      expected_working_dir = FileUtils.pwd
 
       file_path_generator = FilePathGenerator.new(2)
 
       "a".upto("b") do |i|
         path = file_path_generator.path_for_new_file(i.to_s)
+        FileUtils.pwd.must_equal expected_working_dir
         path.must_equal "#{i}"
         FileUtils.touch(path)
       end
@@ -24,6 +26,7 @@ describe "path_for_new_file" do
 
       "c".upto("d") do |i|
         path = file_path_generator.path_for_new_file(i.to_s)
+        FileUtils.pwd.must_equal expected_working_dir
         path.must_equal "./1/#{i}"
         FileUtils.touch(path)
       end
@@ -39,6 +42,7 @@ describe "path_for_new_file" do
 
       "e".upto("f") do |i|
         path = file_path_generator.path_for_new_file(i.to_s)
+        FileUtils.pwd.must_equal expected_working_dir
         path.must_equal "./1/0/#{i}"
         FileUtils.touch(path)
       end

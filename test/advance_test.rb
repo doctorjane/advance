@@ -242,7 +242,48 @@ id,name,location,start_time
 CSV
         $step = 1
 
-        $column_names.must_be_nil
+        $column_names = nil
+        capture_column_names_from_csv
+        $column_names.must_equal %i{id name location start_time}
+      end
+    end
+
+    it "retrieve column names from .meta if the csv file is already tgz'd" do
+      work_in_test_dir "capture_column_names_from_csv_197c6ba0" do |test_dir|
+        FileUtils.touch "step_001_mumble.tgz"
+
+        $pipeline = caller_locations.first.path
+        $run_number = 0
+        $step = 1
+        $column_names = %i{id name location start_time}
+        update_meta($step, :single, "mumble", "./do this", Time.now - 10 * 60 * 60, 25, 3)
+        $column_names = nil
+
+        capture_column_names_from_csv
+        $column_names.must_equal %i{id name location start_time}
+      end
+    end
+
+    it "retrieve column names from later runs and later steps in .meta if the csv file is already tgz'd" do
+      work_in_test_dir "capture_column_names_from_csv_197c6ba0" do |test_dir|
+        FileUtils.touch "step_001_mumble.tgz"
+        FileUtils.touch "step_002_bumble.tgz"
+
+        $pipeline = caller_locations.first.path
+        $run_number = 0
+        $step = 1
+        $column_names = nil
+        update_meta($step, :single, "mumble", "./do this", Time.now - (10 * 60 * 60), 25, 3)
+
+        $run_number = 1
+        $step = 1
+        $column_names = nil
+        update_meta($step, :single, "mumble", "./do this", Time.now - (10 * 60 * 60 + 50), 25, 3)
+
+        $step = 2
+        $column_names = %i{id name location start_time}
+        update_meta($step, :single, "bumble", "./do this too", Time.now - (10 * 60 * 60 + 100), 25, 3)
+
         capture_column_names_from_csv
         $column_names.must_equal %i{id name location start_time}
       end

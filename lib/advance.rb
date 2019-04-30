@@ -79,11 +79,28 @@ module Advance
       raise "capture_column_names_from_csv cannot be the first step"
     end
 
+    if File.exist?(".meta")
+      read_column_names_from_meta
+      return
+    end
+
     previous_dir_path = get_previous_dir_path
     input_file_path = previous_file_path(previous_dir_path)
     CSV.foreach(input_file_path, :headers => true) do |row|
       $column_names = row.headers.map(&:to_sym)
       break
+    end
+  end
+
+  def read_column_names_from_meta
+    meta = JSON.parse(File.read(".meta"))
+    meta["runs"].each do |run|
+      run.each do |step|
+        if step["columns"]
+          $column_names = step["columns"].map(&:to_sym)
+          return
+        end
+      end
     end
   end
 
