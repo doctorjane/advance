@@ -140,8 +140,7 @@ module Advance
   end
 
   def pipeline(pipeline_path)
-    expanded_path = File.expand_path(pipeline_path)
-    load expanded_path
+    load pipeline_path
   end
 
   def count_files(dir)
@@ -346,6 +345,8 @@ module Advance
   end
 
   def ensure_bin_on_path
+    $LOAD_PATH << File.expand_path(File.join(caller_locations.first.path, "../../lib"))
+
     advance_bin_path = File.expand_path(File.join(File.dirname(__FILE__), "../bin"))
     add_dir_to_path(advance_bin_path)
 
