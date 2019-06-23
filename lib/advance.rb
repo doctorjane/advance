@@ -137,6 +137,11 @@ module Advance
     end
   end
 
+  def pipeline(pipeline_path)
+    expanded_path = File.expand_path(pipeline_path)
+    load expanded_path
+  end
+
   def count_files(dir)
     file_count = 0
     Find.find(dir) do |path|

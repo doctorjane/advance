@@ -290,3 +290,53 @@ CSV
     end
   end
 end
+
+describe "pipeline" do
+  it "incorporates another advance pipeline" do
+    work_in_test_dir "pipeline_4f6322d" do |test_dir|
+      FileUtils.mkdir_p "data"
+      FileUtils.mkdir_p "bin"
+
+      File.write "data/stuff.csv", "3"
+
+      File.write "bin/add_one.rb", <<RUBY
+#!/usr/bin/env ruby
+require "csv"
+CSV.filter{|row| row << row.last.to_i + 1 }
+RUBY
+      FileUtils.chmod("+x", "bin/add_one.rb")
+
+      File.write "bin/sub_pipeline_add_three.rb", <<RUBY
+advance :single, :add_one, "cat {input_file} | add_one.rb > {file_name}"
+advance :single, :add_one, "cat {input_file} | add_one.rb > {file_name}"
+advance :single, :add_one, "cat {input_file} | add_one.rb > {file_name}"
+RUBY
+      FileUtils.chmod("+x", "bin/sub_pipeline_add_three.rb")
+
+      File.write "bin/pipeline.rb", <<RUBY
+#!/usr/bin/env ruby
+require_relative "../../../lib/advance"
+include Advance
+ensure_bin_on_path
+advance :single, :add_one, "cat {input_file} | add_one.rb > {file_name}"
+pipeline "../bin/sub_pipeline_add_three.rb"
+advance :single, :add_one, "cat {input_file} | add_one.rb > {file_name}"
+RUBY
+      FileUtils.chmod("+x", "bin/pipeline.rb")
+
+      FileUtils.chdir "data"
+      output = `../bin/pipeline.rb`
+      results = $?
+
+      results.success?.must_equal true
+
+      FileUtils.chdir test_dir
+      created_files = Dir.entries("./data")
+      created_files.sort.must_equal(%w(. .. .meta step_001_add_one.tgz step_002_add_one.tgz step_003_add_one.tgz step_004_add_one.tgz step_005_add_one stuff.csv))
+
+      output = File.read("./data/step_005_add_one/stuff.csv").chomp
+
+      output.must_equal("3,4,5,6,7,8")
+    end
+  end
+end
