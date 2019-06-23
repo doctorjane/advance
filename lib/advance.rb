@@ -80,8 +80,9 @@ module Advance
     end
 
     if File.exist?(".meta")
-      read_column_names_from_meta
-      return
+      if read_column_names_from_meta
+        return
+      end
     end
 
     previous_dir_path = get_previous_dir_path
@@ -98,10 +99,11 @@ module Advance
       run.each do |step|
         if step["columns"]
           $column_names = step["columns"].map(&:to_sym)
-          return
+          return true
         end
       end
     end
+    false
   end
 
   def advance(processing_mode, label, command)
@@ -199,14 +201,15 @@ module Advance
 
   def single(command, previous_dir_path, dir_name)
     work_in_sub_dir(dir_name) do
-      input_file_path = previous_file_path(previous_dir_path)
-      basename = File.basename(input_file_path)
-      root_file_name = basename.gsub(%r(\.[^.]+$), '')
       command.gsub!("{input_dir}", previous_dir_path)
-      command.gsub!("{input_file}", input_file_path)
-      command.gsub!("{file_name}", basename)
-      command.gsub!("{file_name_without_extension}", root_file_name)
-
+      input_file_path = previous_file_path(previous_dir_path)
+      if input_file_path
+        basename = File.basename(input_file_path)
+        root_file_name = basename.gsub(%r(\.[^.]+$), '')
+        command.gsub!("{input_file}", input_file_path)
+        command.gsub!("{file_name}", basename)
+        command.gsub!("{file_name_without_extension}", root_file_name)
+      end
       do_command command
     end
   end
@@ -306,7 +309,7 @@ module Advance
   end
 
   def do_command(command, feedback = true)
-    puts "#{YELLOW}#{command}#{RESET}  " if feedback
+    puts "#{YELLOW}#{command}#{RESET}  " #if feedback
     start_time = Time.now
     stdout, stderr, status = Open3.capture3(command)
     elapsed_time = Time.now - start_time
