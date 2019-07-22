@@ -219,7 +219,7 @@ module Advance
 
       last_progress = ""
       progress_proc = ->(index, max_index) do
-        latest_progress = sprintf("%3i%", index.to_f / max_index * 100)
+        latest_progress = sprintf("%3i%%", index.to_f / max_index * 100)
         puts latest_progress if last_progress != latest_progress
         last_progress = latest_progress
       end
