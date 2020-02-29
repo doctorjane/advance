@@ -8,7 +8,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     minitest (5.10.1)
-    rake (10.4.2)
+    rake (13.0.1)
     team_effort (1.0.1)
 
 PLATFORMS
@@ -18,7 +18,7 @@ DEPENDENCIES
   advance!
   bundler (~> 1.16)
   minitest (~> 5.0)
-  rake (~> 10.0)
+  rake (~> 13.0)
 
 BUNDLED WITH
    1.17.3
