@@ -308,7 +308,7 @@ module Advance
   end
 
   def do_command(command, feedback = true)
-    puts "#{YELLOW}#{command}#{RESET}  " #if feedback
+    puts "#{YELLOW}#{command}#{RESET}  " if feedback
     start_time = Time.now
     stdout, stderr, status = Open3.capture3(command)
     elapsed_time = Time.now - start_time
