@@ -21,6 +21,18 @@ module Advance
   WHITE="\e[1;37m"
   YELLOW="\e[33m"
 
+  def env_is?(env_var_name, default)
+    case ENV[env_var_name]
+    when "true"; true
+    when "false"; false
+    when nil; default
+    else
+      puts "env variable #{env_var_name} should be 'true', 'false', or not present (defaults to '#{default}')"
+      puts "currently set to >#{ENV[env_var_name]}<"
+      false
+    end
+  end
+
   def self.included(pipeline_module)
     $pipeline = caller_locations.first.path
     meta =
@@ -33,25 +45,6 @@ module Advance
     $run_number = last_run_number + 1
     $cores=`nproc`.to_i
     puts "Multi steps will use #{$cores} cores"
-
-    $verbose_logging = case ENV["ADVANCE_VERBOSE_LOGGING"]
-                       when "true"; true
-                       when "false"; false
-                       when nil; false
-                       else
-                         puts "env variable ADVANCE_VERBOSE_LOGGING should be 'true', 'false', or not present (defaults to 'false')"
-                         puts "currently set to >#{ENV["ADVANCE_VERBOSE_LOGGING"]}<"
-                         false
-                       end
-    $save_history = case ENV["ADVANCE_SAVE_HISTORY"]
-                    when "true"; true
-                    when "false"; false
-                    when nil; true
-                    else
-                      puts "env variable ADVANCE_SAVE_HISTORY should be 'true', 'false', or not present (defaults to 'true')"
-                      puts "currently set to >#{ENV["ADVANCE_SAVE_HISTORY"]}<"
-                      true
-                    end
   end
 
   def update_meta(step_number, processing_mode, label, command, start_time, duration, file_count)
@@ -140,7 +133,7 @@ module Advance
     end
     previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
     if File.basename(previous_dir_path) =~ /^step_/
-      if $save_history && !File.exist?("#{previous_dir_path}.tgz")
+      if env_is?("ADVANCE_SAVE_HISTORY", true) && !File.exist?("#{previous_dir_path}.tgz")
         do_command_wo_log "tar czf #{previous_dir_path}.tgz #{File.basename(previous_dir_path)}"
       end
       do_command_wo_log "rm -rf #{previous_dir_path}"
@@ -243,9 +236,9 @@ module Advance
           command.gsub!("{input_file}", file_path)
           command.gsub!("{file_name}", basename)
           command.gsub!("{file_name_without_extension}", root_file_name)
-          puts "#{YELLOW}#{command}#{RESET}  " if $verbose_logging
+          puts "#{YELLOW}#{command}#{RESET}  " if env_is?("ADVANCE_VERBOSE_LOGGING", false)
           work_in_sub_dir(new_dir_name) do
-            do_command command, $verbose_logging
+            do_command command, env_is?("ADVANCE_VERBOSE_LOGGING", false)
           end
         rescue
           puts "%%%% error while processing >>#{file_path}<<"
