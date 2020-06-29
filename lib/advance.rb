@@ -37,13 +37,21 @@ module Advance
     $verbose_logging = case ENV["ADVANCE_VERBOSE_LOGGING"]
                        when "true"; true
                        when "false"; false
-                       when nil
-                         puts "For detailed logging of multi steps, rerun after 'export ADVANCE_VERBOSE_LOGGING=true'"
-                         false
+                       when nil; false
                        else
                          puts "env variable ADVANCE_VERBOSE_LOGGING should be 'true', 'false', or not present (defaults to 'false')"
                          puts "currently set to >#{ENV["ADVANCE_VERBOSE_LOGGING"]}<"
+                         false
                        end
+    $save_history = case ENV["ADVANCE_SAVE_HISTORY"]
+                    when "true"; true
+                    when "false"; false
+                    when nil; true
+                    else
+                      puts "env variable ADVANCE_SAVE_HISTORY should be 'true', 'false', or not present (defaults to 'true')"
+                      puts "currently set to >#{ENV["ADVANCE_SAVE_HISTORY"]}<"
+                      true
+                    end
   end
 
   def update_meta(step_number, processing_mode, label, command, start_time, duration, file_count)
@@ -132,7 +140,7 @@ module Advance
     end
     previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
     if File.basename(previous_dir_path) =~ /^step_/
-      if !File.exist?("#{previous_dir_path}.tgz")
+      if $save_history && !File.exist?("#{previous_dir_path}.tgz")
         do_command_wo_log "tar czf #{previous_dir_path}.tgz #{File.basename(previous_dir_path)}"
       end
       do_command_wo_log "rm -rf #{previous_dir_path}"
