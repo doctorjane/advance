@@ -240,7 +240,7 @@ module Advance
           work_in_sub_dir(new_dir_name) do
             do_command command, env_is?("ADVANCE_VERBOSE_LOGGING", false)
           end
-          do_command_wo_log "rm #{file_path}" if !env_is?("ADVANCE_SAVE_HISTORY", true)
+          do_command_wo_log("rm #{file_path}", false) if !env_is?("ADVANCE_SAVE_HISTORY", true)
         rescue
           puts "%%%% error while processing >>#{file_path}<<"
           raise
