@@ -313,16 +313,20 @@ module Advance
     puts "#{YELLOW}#{command}#{RESET}  " if feedback
     start_time = Time.now
     stdout, stderr, status = Open3.capture3(command)
-    elapsed_time = Time.now - start_time
-    File.open("log", "w") do |f|
-      f.puts "%%% command: >#{command}<"
-      f.puts "%%% returned status: >#{status}<"
-      f.puts "%%% elapsed time: #{elapsed_time} seconds"
-      f.puts "%%% stdout:"
-      f.puts stdout
-      f.puts "%%% stderr:"
-      f.puts stderr
+
+    if env_is?("ADVANCE_LOG_FILES", true)
+      elapsed_time = Time.now - start_time
+      File.open("log", "w") do |f|
+        f.puts "%%% command: >#{command}<"
+        f.puts "%%% returned status: >#{status}<"
+        f.puts "%%% elapsed time: #{elapsed_time} seconds"
+        f.puts "%%% stdout:"
+        f.puts stdout
+        f.puts "%%% stderr:"
+        f.puts stderr
+      end
     end
+
     if !status.success?
       raise "step #{$step} failed with #{status}\n#{stderr}"
     end
