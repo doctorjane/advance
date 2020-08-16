@@ -126,6 +126,11 @@ module Advance
       end
       previous_dir_path = previous_dir_path.gsub(/\.tgz$/, "")
       start_time = Time.now
+
+      puts "#{GRAY}storage summary"
+      system('df -h .')
+      puts "---------#{RESET}"
+
       send(processing_mode, command, previous_dir_path, dir_name)
       file_count = count_files(dir_name)
       duration = Time.now - start_time
