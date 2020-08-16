@@ -22,13 +22,13 @@ CSV
         puts results
         puts "======================"
       end
-      status.must_be :success?
+      _(status).must_be :success?
 
       files_in_tmp_dir = Dir.entries(".")
-      files_in_tmp_dir.must_equal(%w(. .. abc_111.csv abc_222.csv def_333.csv))
-      File.read("abc_111.csv").must_equal("abc,111,555\n")
-      File.read("abc_222.csv").must_equal("abc,222,666\nabc,222,333\n")
-      File.read("def_333.csv").must_equal("def,333,777\n")
+      _(files_in_tmp_dir).must_equal(%w(. .. abc_111.csv abc_222.csv def_333.csv))
+      _(File.read("abc_111.csv")).must_equal("abc,111,555\n")
+      _(File.read("abc_222.csv")).must_equal("abc,222,666\nabc,222,333\n")
+      _(File.read("def_333.csv")).must_equal("def,333,777\n")
 
     ensure
       FileUtils.chdir("..")

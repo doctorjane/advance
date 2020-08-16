@@ -19,7 +19,7 @@ CSV
       csv_select_bin = File.expand_path("../../bin/csv_select.rb", __FILE__)
       output = `#{csv_select_bin} "row['y']==666" < #{tmp_file.path}`
 
-      output.must_equal(expected)
+      _(output).must_equal(expected)
 
     ensure
       tmp_file.close

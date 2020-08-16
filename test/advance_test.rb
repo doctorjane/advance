@@ -15,7 +15,7 @@ describe "strip_extensions" do
       foo.json
       foo.tgz
     ).each do |file_name|
-      strip_extensions(file_name).must_equal("foo")
+      _(strip_extensions(file_name)).must_equal("foo")
     end
   end
 end
@@ -42,7 +42,7 @@ describe "work_in_sub_dir" do
           File.write("test", "hello")
         end
         created_dirs = Dir.entries(".")
-        created_dirs.must_equal(%w(. .. foo))
+        _(created_dirs).must_equal(%w(. .. foo))
       end
     end
   end
@@ -61,20 +61,20 @@ describe "multi" do
         advance :multi, :mumble, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
         created_files = Dir.entries(".")
-        created_files.must_equal(%w(. .. .meta foo.csv bar.csv step_001_mumble))
+        _(created_files).must_equal(%w(. .. .meta foo.csv bar.csv step_001_mumble))
 
         created_files = Dir.entries("./step_001_mumble")
-        created_files.must_equal(%w(. .. foo bar))
+        _(created_files).must_equal(%w(. .. foo bar))
 
         created_files = Dir.entries("./step_001_mumble/foo")
-        created_files.must_equal(%w(. .. foo.csv log))
+        _(created_files).must_equal(%w(. .. foo.csv log))
         contents = File.read("./step_001_mumble/foo/foo.csv")
-        contents.must_equal("#{full_dir_path}/foo.csv and foo\n")
+        _(contents).must_equal("#{full_dir_path}/foo.csv and foo\n")
 
         created_files = Dir.entries("./step_001_mumble/bar")
-        created_files.must_equal(%w(. .. bar.csv log))
+        _(created_files).must_equal(%w(. .. bar.csv log))
         contents = File.read("./step_001_mumble/bar/bar.csv")
-        contents.must_equal("#{full_dir_path}/bar.csv and bar\n")
+        _(contents).must_equal("#{full_dir_path}/bar.csv and bar\n")
       end
     end
   end
@@ -88,7 +88,7 @@ describe "multi" do
       FileUtils.touch "step_001_mumble/abc/something_3.csv"
       FileUtils.touch "step_001_mumble/def/something_4.csv"
 
-      Dir.glob("step_001_mumble/**/*").sort.must_equal %w(
+      _(Dir.glob("step_001_mumble/**/*").sort).must_equal %w(
         step_001_mumble/abc
         step_001_mumble/abc/something_1.csv
         step_001_mumble/abc/something_2.csv
@@ -101,7 +101,7 @@ describe "multi" do
 
       advance :multi, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
-      Dir.glob("step_002_flagerize/**/*").sort.must_equal %w(
+      _(Dir.glob("step_002_flagerize/**/*").sort).must_equal %w(
         step_002_flagerize/abc
         step_002_flagerize/abc/something_1
         step_002_flagerize/abc/something_1/log
@@ -129,7 +129,7 @@ describe "multi" do
       FileUtils.touch "step_002_mumble/abc/bar/bar.csv"
       FileUtils.touch "step_002_mumble/def/baz/baz.csv"
 
-      Dir.glob("step_002_mumble/**/*").sort.must_equal %w(
+      _(Dir.glob("step_002_mumble/**/*").sort).must_equal %w(
         step_002_mumble/abc
         step_002_mumble/abc/bar
         step_002_mumble/abc/bar/bar.csv
@@ -145,7 +145,7 @@ describe "multi" do
 
       advance :multi, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
-      Dir.glob("step_003_flagerize/**/*").sort.must_equal %w(
+      _(Dir.glob("step_003_flagerize/**/*").sort).must_equal %w(
         step_003_flagerize/abc
         step_003_flagerize/abc/bar
         step_003_flagerize/abc/bar/bar.csv
@@ -173,12 +173,12 @@ describe "single" do
       advance :single, :mumble, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       created_files = Dir.entries(".")
-      created_files.must_equal(%w(. .. .meta foo.csv step_001_mumble))
+      _(created_files).must_equal(%w(. .. .meta foo.csv step_001_mumble))
 
       created_files = Dir.entries("./step_001_mumble")
-      created_files.must_equal(%w(. .. foo.csv log))
+      _(created_files).must_equal(%w(. .. foo.csv log))
       contents = File.read("./step_001_mumble/foo.csv")
-      contents.must_equal("#{test_dir}/foo.csv and foo\n")
+      _(contents).must_equal("#{test_dir}/foo.csv and foo\n")
     end
   end
 
@@ -193,7 +193,7 @@ describe "single" do
       advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       files = Dir.entries(".")
-      files.sort.must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
+      _(files.sort).must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
     end
   end
 
@@ -208,7 +208,7 @@ describe "single" do
       advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       files = Dir.entries(".")
-      files.sort.must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
+      _(files.sort).must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
     end
   end
 
@@ -225,10 +225,10 @@ describe "single" do
       advance :single, :flagerize, "echo {input_file} and {file_name_without_extension} > {file_name}"
 
       files = Dir.entries(".")
-      files.sort.must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
+      _(files.sort).must_equal(%w(. .. .meta step_001_mumble.tgz step_002_flagerize).sort)
 
       contents = File.read("./step_002_flagerize/something_1.csv")
-      contents.must_equal("#{test_dir}/step_001_mumble/something_1.csv and something_1\n")
+      _(contents).must_equal("#{test_dir}/step_001_mumble/something_1.csv and something_1\n")
     end
   end
 
@@ -244,7 +244,7 @@ CSV
 
         $column_names = nil
         capture_column_names_from_csv
-        $column_names.must_equal %i{id name location start_time}
+        _($column_names).must_equal %i{id name location start_time}
       end
     end
 
@@ -260,7 +260,7 @@ CSV
         $column_names = nil
 
         capture_column_names_from_csv
-        $column_names.must_equal %i{id name location start_time}
+        _($column_names).must_equal %i{id name location start_time}
       end
     end
 
@@ -285,7 +285,7 @@ CSV
         update_meta($step, :single, "bumble", "./do this too", Time.now - (10 * 60 * 60 + 100), 25, 3)
 
         capture_column_names_from_csv
-        $column_names.must_equal %i{id name location start_time}
+        _($column_names).must_equal %i{id name location start_time}
       end
     end
   end
@@ -328,15 +328,15 @@ RUBY
       output = `../bin/pipeline.rb`
       results = $?
 
-      results.success?.must_equal true
+      _(results.success?).must_equal true
 
       FileUtils.chdir test_dir
       created_files = Dir.entries("./data")
-      created_files.sort.must_equal(%w(. .. .meta step_001_add_one.tgz step_002_add_one.tgz step_003_add_one.tgz step_004_add_one.tgz step_005_add_one stuff.csv))
+      _(created_files.sort).must_equal(%w(. .. .meta step_001_add_one.tgz step_002_add_one.tgz step_003_add_one.tgz step_004_add_one.tgz step_005_add_one stuff.csv))
 
       output = File.read("./data/step_005_add_one/stuff.csv").chomp
 
-      output.must_equal("3,4,5,6,7,8")
+      _(output).must_equal("3,4,5,6,7,8")
     end
   end
 end

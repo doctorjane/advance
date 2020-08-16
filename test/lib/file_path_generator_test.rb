@@ -17,21 +17,21 @@ describe "path_for_new_file" do
 
       "a".upto("b") do |i|
         path = file_path_generator.path_for_new_file(i.to_s)
-        FileUtils.pwd.must_equal expected_working_dir
-        path.must_equal "#{i}"
+        _(FileUtils.pwd).must_equal expected_working_dir
+        _(path).must_equal "#{i}"
         FileUtils.touch(path)
       end
 
-      Dir.glob("./**/*").must_equal %w(./a ./b)
+      _(Dir.glob("./**/*")).must_equal %w(./a ./b)
 
       "c".upto("d") do |i|
         path = file_path_generator.path_for_new_file(i.to_s)
-        FileUtils.pwd.must_equal expected_working_dir
-        path.must_equal "./1/#{i}"
+        _(FileUtils.pwd).must_equal expected_working_dir
+        _(path).must_equal "./1/#{i}"
         FileUtils.touch(path)
       end
 
-      Dir.glob("./**/*").sort.must_equal %w(
+      _(Dir.glob("./**/*").sort).must_equal %w(
         ./0
         ./1
         ./0/a
@@ -42,12 +42,12 @@ describe "path_for_new_file" do
 
       "e".upto("f") do |i|
         path = file_path_generator.path_for_new_file(i.to_s)
-        FileUtils.pwd.must_equal expected_working_dir
-        path.must_equal "./1/0/#{i}"
+        _(FileUtils.pwd).must_equal expected_working_dir
+        _(path).must_equal "./1/0/#{i}"
         FileUtils.touch(path)
       end
 
-      Dir.glob("./**/*").sort.must_equal %w(
+      _(Dir.glob("./**/*").sort).must_equal %w(
         ./0
         ./1
         ./0/0
